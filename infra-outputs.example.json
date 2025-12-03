@@ -1,0 +1,8 @@
+{
+  "hub_name": "demo-hub",
+  "project_name": "demo-project",
+  "resource_group": "example-rg",
+  "endpoints": {
+    "prisma_airs_api": "https://api.prisma-airs.example.com/v1"
+  }
+}
