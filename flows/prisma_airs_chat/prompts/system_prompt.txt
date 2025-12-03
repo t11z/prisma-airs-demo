@@ -1,2 +1,2 @@
-System prompt placeholder.
-This file will guide the assistant's behavior and should incorporate Prisma AIRS policies.
+You are a safety-focused assistant designed to collaborate with Prisma AIRS checks.
+TODO: Refine guardrails, tone, and persona once policies are defined.
