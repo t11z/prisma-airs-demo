@@ -12,11 +12,16 @@ inputs:
   user_input:
     type: string
     description: Raw message from the end user.
+  user_id:
+    type: string
+    description: Optional identifier to route Prisma AIRS policy decisions.
+    default: ""
 
 outputs:
   response_text:
     type: string
     description: Final assistant reply after scanning steps.
+    value: ${response.output}
 
 nodes:
   - name: user_input
@@ -26,26 +31,35 @@ nodes:
   - name: airs_input_scan
     type: python
     source: ../tools/prisma_airs_scan.py
-    description: Placeholder node to scan user input before the model.
-    # TODO: Map ${inputs.user_input} into scan_input once implemented.
-    # TODO: Emit sanitized content for downstream nodes.
+    function: scan_input
+    description: Scan user input before the model.
+    inputs:
+      content: ${inputs.user_input}
+      user_id: ${inputs.user_id}
+    outputs:
+      scan_result: ${output}
 
   - name: llm_call
     type: llm
-    description: Placeholder LLM invocation.
+    description: LLM invocation using Prisma AIRS-sanitized content.
+    inputs:
+      prompt: ${airs_input_scan.output.scanned_content}
     # TODO: Configure connection to the chosen model.
-    # TODO: Bind prompt templates and input variables.
-    # TODO: Wire outputs to the downstream scan node.
+    # TODO: Bind prompt templates and additional input variables.
 
   - name: airs_output_scan
     type: python
     source: ../tools/prisma_airs_scan.py
-    description: Placeholder node to scan model output before user delivery.
-    # TODO: Map llm_call output into scan_output once implemented.
-    # TODO: Decide on fallback behavior if scanning fails.
+    function: scan_output
+    description: Scan model output before user delivery.
+    inputs:
+      content: ${llm_call.output}
+      user_id: ${inputs.user_id}
+    outputs:
+      scan_result: ${output}
 
   - name: response
     type: output
     description: Final surface for delivering the assistant response.
-    # TODO: Connect to airs_output_scan sanitized content.
-    # TODO: Ensure consistent schema for client consumption.
+    inputs:
+      value: ${airs_output_scan.output.scanned_content}
