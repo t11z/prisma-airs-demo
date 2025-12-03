@@ -1,8 +1,37 @@
 {
-  "hub_name": "demo-hub",
-  "project_name": "demo-project",
-  "resource_group": "example-rg",
-  "endpoints": {
-    "prisma_airs_api": "https://api.prisma-airs.example.com/v1"
+  "ai_foundry_hub_name": {
+    "value": "airsdemo01-hub",
+    "type": "string",
+    "sensitive": false
+  },
+  "ai_foundry_project_name": {
+    "value": "airsdemo01-project",
+    "type": "string",
+    "sensitive": false
+  },
+  "location": {
+    "value": "eastus2",
+    "type": "string",
+    "sensitive": false
+  },
+  "ai_services_name": {
+    "value": "airsdemo01-aisvc",
+    "type": "string",
+    "sensitive": false
+  },
+  "ai_services_endpoint": {
+    "value": "https://airsdemo01-aisvc.openai.azure.com",
+    "type": "string",
+    "sensitive": false
+  },
+  "storage_account_name": {
+    "value": "airsdemo01storage",
+    "type": "string",
+    "sensitive": false
+  },
+  "search_service_name": {
+    "value": "airsdemo01-search",
+    "type": "string",
+    "sensitive": false
   }
 }
