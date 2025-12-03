@@ -1,58 +1,70 @@
-# Prisma AIRS + Azure AI Foundry Lab
+Prisma AIRS + Azure AI Foundry Lab
+A guided lab for Palo Alto Networks Solutions Consultants to deploy and demonstrate Prisma AIRS protections inside Azure AI Foundry.
 
-Spin up a Prisma AIRS-protected Azure AI Foundry playground for Palo Alto Networks Solutions Consultants, Domain Consultants, customers evaluating Prisma AIRS, and any other interested practitioner.
+Why this project exists
+- Solutions Consultants need a repeatable, fast lab environment that mirrors customer-ready deployments.
+- The lab uses the native Azure AI Foundry UI, so no custom frontend or app build is required.
+- Prisma AIRS integrates into Prompt Flow to scan both prompts and responses for safer AI interactions.
 
-## Overview
-This repository is a lab and demo starter kit for Palo Alto Networks Solutions Consultants, Domain Consultants, customers evaluating Prisma AIRS, and anyone who wants to explore the integration. It will provision an Azure AI Foundry Hub and Project, connect a Prompt Flow that routes conversations through Prisma AIRS, and showcase a secured AI assistant experience. The long-term goal is to let you use the native Azure AI Foundry UI as your chat surface while Prisma AIRS provides input and output scanning.
+Prerequisites
+- An existing Azure Resource Group where you have Contributor access (the group must be created before running Terraform).
+- An Azure subscription that supports Azure AI Foundry and associated services in your chosen region.
+- A Prisma AIRS tenant and API key available for scanning requests and responses.
+- Local tools installed: az CLI, terraform, python, and pip available on your PATH.
+- Awareness of Key Vault and secrets: the deployment expects to store secrets securely; ensure you can set and read secrets in the target Resource Group.
 
-Use this project to:
-- Stand up an Azure AI Foundry environment inside an existing resource group.
-- Deploy a Prompt Flow that leverages Prisma AIRS for safety controls.
-- Demonstrate the Prisma AIRS and Azure AI pairing with minimal custom code.
+Architecture Overview
+The lab layers Prisma AIRS into an Azure AI Foundry deployment inside a pre-created Resource Group. The flow below shows the main components and how Prisma AIRS wraps the Prompt Flow traffic.
 
-## High-Level Architecture
-The environment is designed around a pre-created Azure Resource Group, with Terraform handling the Azure AI components and Prisma AIRS providing security for every prompt and response.
-
-```
-[ Azure Resource Group ]
+[ Resource Group ]
+  |
+  |-- Terraform provisioning layer
+  |     |
+  |     |-- Azure AI Foundry Hub
+  |     |     |
+  |     |     '-- Project
+  |     |
+  |     |-- Azure AI Services (model endpoints)
+  |     |-- Storage Account
+  |     '-- Optional Azure AI Search
+  |
+  |-- Prompt Flow (runs inside the Project)
         |
-        |-- Terraform deploys: Azure AI Foundry Hub + Project + supporting services
-        |
-        |-- Prompt Flow runs inside the Project
-        |
-        '-- Prisma AIRS scans input and output around the Flow
-```
+        '-- Prisma AIRS scans input and output traffic
 
-## Prerequisites
-- Existing empty Azure Resource Group where you have Contributor permissions.
-- Access to an Azure subscription that supports Azure AI Foundry and Azure OpenAI.
-- Prisma AIRS tenant and API key.
-- Local tooling: `az` CLI, `terraform`, `python`, and `pip` (exact versions will be detailed later).
+End-to-End Usage Guide
+Follow these steps to deploy and test the lab end to end:
+1) Clone the repository
+   git clone https://github.com/PaloAltoNetworks/prisma-airs-azure-foundry-lab.git
+   cd prisma-airs-azure-foundry-lab
+2) Configure environment variables
+   Copy infra/env/demo.tfvars and edit values for your Resource Group, region, and service choices.
+3) Initialize and apply Terraform
+   cd infra
+   terraform init
+   terraform apply -var-file=env/demo.tfvars
+4) Capture outputs for flow deployment
+   terraform output -json > ../infra-outputs.json
+   cd ..
+5) Install flow dependencies
+   pip install -r flows/requirements.txt
+6) Deploy the Prompt Flow with Prisma AIRS integration
+   python scripts/deploy_flow.py --config infra-outputs.json
+7) Open Azure AI Foundry
+   In the Azure portal, open the AI Foundry Project, navigate to Prompt Flow, and run a test chat to verify Prisma AIRS scanning.
 
-## Folder Structure
-- `infra/` — Terraform scaffolding for Azure AI Foundry Hub, Project, and related services.
-- `flows/` — Prompt Flow assets, including tools and prompts that will integrate Prisma AIRS.
-- `scripts/` — Helper scripts for deploying flows and loading Terraform outputs.
-- `.github/` — GitHub Actions workflows for automation.
+Troubleshooting
+- Region not supported: Switch the region in your tfvars file to one that offers Azure AI Foundry and Azure AI Services.
+- Missing Contributor access: Confirm your account has Contributor on the target Resource Group; owners can assign via Access control (IAM).
+- Missing Prisma AIRS API key: Request a valid key from your Prisma AIRS tenant admin and set it before deploying the flow.
+- Key Vault scope or credential issues: Ensure the Key Vault resides in the same Resource Group and your identity has set/get permissions for secrets.
+- Flow deployment failure: Re-run terraform output to refresh infra-outputs.json, reinstall dependencies, and verify your network connectivity to Azure endpoints.
 
-## Planned End-to-End Flow (Future State)
-Once the implementation is complete, the journey should look like this:
-1. Clone the repository.
-2. Configure `infra/env/demo.tfvars` for your environment.
-3. Run `terraform apply` from `infra/` to build Azure AI Foundry resources.
-4. Export Terraform outputs into `infra-outputs.json`.
-5. Install Python dependencies via `pip install -r flows/requirements.txt`.
-6. Deploy the Prompt Flow with `python scripts/deploy_flow.py --config infra-outputs.json`.
-7. Open the Azure AI Foundry UI and start chatting with the Prisma AIRS-protected assistant.
+Roadmap
+- [x] PR 1–6 completed
+- [ ] PR 8 GitHub Actions
+- [ ] PR 9 RAG Add-on
+- [ ] PR 10 Demo Profiles
 
-Several of these steps are placeholders today and will be delivered in upcoming iterations.
-
-## Status & Roadmap
-- [x] Repo scaffold & README
-- [ ] Terraform: Azure AI Foundry infra
-- [ ] Prisma AIRS tool integration
-- [ ] Flow deployment script
-- [ ] GitHub Actions automation
-
-## License
-This project is licensed under the MIT License. See [LICENSE](LICENSE) for details.
+License
+This project is licensed under the MIT License. See LICENSE for details.
