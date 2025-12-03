@@ -1,2 +1,2 @@
-User prompt placeholder.
-This file will frame the user's message and connect it to Prisma AIRS scanning routines.
+User message: {user_input}
+TODO: Expand templating and variable mapping for additional context.

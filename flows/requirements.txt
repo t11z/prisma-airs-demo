@@ -1,1 +1,8 @@
-# Placeholder for Prompt Flow and Prisma AIRS Python dependencies.
+# Placeholder requirements file for Prompt Flow and Prisma AIRS integration.
+# TODO: Add core Prompt Flow dependencies when wiring up the pipeline.
+
+# Runtime dependencies
+# TODO: Insert Prisma AIRS SDK when available.
+
+# Development tools
+# TODO: Add linting and testing packages as needed.

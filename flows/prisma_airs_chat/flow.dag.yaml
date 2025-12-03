@@ -1,25 +1,51 @@
-# Prompt Flow DAG definition for Prisma AIRS + Azure AI Foundry chat.
-# TODO: Replace placeholders with actual nodes, connections, and parameters.
+# DAG skeleton for Prisma AIRS-enabled chat flow.
+# TODO: Wire actual node implementations and connections.
 
 name: prisma-airs-chat
-version: 0.0.1
+version: 0.1.0
+
+description: |
+  Placeholder DAG defining the high-level stages for input scanning, model invocation,
+  and output validation with Prisma AIRS.
 
 inputs:
   user_input:
     type: string
-    description: "User message to the assistant"
+    description: Raw message from the end user.
 
 outputs:
-  chat_response:
+  response_text:
     type: string
-    description: "Assistant response after Prisma AIRS scanning"
+    description: Final assistant reply after scanning steps.
 
 nodes:
-  # - name: prepare_request
-  #   type: python
-  #   source: ./tools/prisma_airs_scan.py
-  #   inputs:
-  #     text: ${inputs.user_input}
-  #   outputs:
-  #     sanitized_text: ${outputs.cleaned_input}
-  # TODO: Add additional nodes for LLM calls and response scanning.
+  - name: user_input
+    type: input
+    description: Entry point for user-provided text.
+
+  - name: airs_input_scan
+    type: python
+    source: ../tools/prisma_airs_scan.py
+    description: Placeholder node to scan user input before the model.
+    # TODO: Map ${inputs.user_input} into scan_input once implemented.
+    # TODO: Emit sanitized content for downstream nodes.
+
+  - name: llm_call
+    type: llm
+    description: Placeholder LLM invocation.
+    # TODO: Configure connection to the chosen model.
+    # TODO: Bind prompt templates and input variables.
+    # TODO: Wire outputs to the downstream scan node.
+
+  - name: airs_output_scan
+    type: python
+    source: ../tools/prisma_airs_scan.py
+    description: Placeholder node to scan model output before user delivery.
+    # TODO: Map llm_call output into scan_output once implemented.
+    # TODO: Decide on fallback behavior if scanning fails.
+
+  - name: response
+    type: output
+    description: Final surface for delivering the assistant response.
+    # TODO: Connect to airs_output_scan sanitized content.
+    # TODO: Ensure consistent schema for client consumption.
