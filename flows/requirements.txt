@@ -3,5 +3,7 @@
 aisecurity
 requests
 # TODO: Add core Prompt Flow dependencies when wiring up the pipeline.
+azure-ai-ml
+azure-identity
 # Development tools
 # TODO: Add linting and testing packages as needed.
