@@ -15,13 +15,13 @@ output "location" {
   value       = var.location
 }
 
-output "openai_resource_name" {
-  description = "Name of the Azure OpenAI (Cognitive Services) resource."
+output "ai_services_name" {
+  description = "Name of the Azure AI Services (Cognitive Services) resource."
   value       = azurerm_cognitive_account.openai.name
 }
 
-output "openai_endpoint" {
-  description = "Endpoint for the Azure OpenAI resource."
+output "ai_services_endpoint" {
+  description = "Endpoint for the Azure AI Services resource." // TODO: Confirm endpoint attribute if resource changes.
   value       = azurerm_cognitive_account.openai.endpoint
 }
 
@@ -30,8 +30,8 @@ output "storage_account_name" {
   value       = azurerm_storage_account.storage.name
 }
 
-# Search service output is optional; uncomment when the resource is enabled.
-# output "search_service_name" {
-#   description = "Name of the Azure AI Search service."
-#   value       = azurerm_search_service.search.name
-# }
+// Search service output is optional; uncomment when the resource is enabled.
+// output "search_service_name" {
+//   description = "Name of the Azure AI Search service."
+//   value       = azurerm_search_service.search.name
+// }
