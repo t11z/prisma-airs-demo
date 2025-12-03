@@ -1,9 +1,8 @@
-# Placeholder requirements file for Prompt Flow and Prisma AIRS integration.
-# Runtime dependencies
-aisecurity
-requests
-# TODO: Add core Prompt Flow dependencies when wiring up the pipeline.
+# Runtime dependencies for the Prisma AIRS + Azure AI Foundry lab Prompt Flow.
+
+# Prisma AIRS Python SDK (aisecurity module)
+pan-aisecurity
+
+# Azure ML / AI Foundry client and auth
 azure-ai-ml
 azure-identity
-# Development tools
-# TODO: Add linting and testing packages as needed.

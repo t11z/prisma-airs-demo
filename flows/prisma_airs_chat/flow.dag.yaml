@@ -1,12 +1,12 @@
-# DAG skeleton for Prisma AIRS-enabled chat flow.
-# TODO: Wire actual node implementations and connections.
+# DAG for Prisma AIRS-enabled chat flow.
 
 name: prisma-airs-chat
 version: 0.1.0
 
 description: |
-  Placeholder DAG defining the high-level stages for input scanning, model invocation,
-  and output validation with Prisma AIRS.
+  Chat flow that wraps model input and output with Prisma AIRS inline scans.
+  User messages are scanned before they hit the model, and model responses
+  are scanned again before being returned.
 
 inputs:
   user_input:
@@ -32,34 +32,42 @@ nodes:
     type: python
     source: ../tools/prisma_airs_scan.py
     function: scan_input
-    description: Scan user input before the model.
+    description: Scan user input before the model using Prisma AIRS.
     inputs:
       content: ${inputs.user_input}
       user_id: ${inputs.user_id}
-    outputs:
-      scan_result: ${output}
+    # The Python function returns a dict; Prompt Flow exposes it as "output".
+    # Expected keys include:
+    #   - scanned_content
+    #   - status
+    #   - reason
+    #   - result
 
   - name: llm_call
     type: llm
     description: LLM invocation using Prisma AIRS-sanitized content.
     inputs:
+      # Use the scanned / possibly redacted content as prompt.
       prompt: ${airs_input_scan.output.scanned_content}
-    # TODO: Configure connection to the chosen model.
-    # TODO: Bind prompt templates and additional input variables.
+    # TODO: Configure connection and deployment name for the model, for example:
+    # connection: your-aoai-connection
+    # deployment_name: gpt-4o-mini
+    # Additional prompt template and variables can also be configured here.
 
   - name: airs_output_scan
     type: python
     source: ../tools/prisma_airs_scan.py
     function: scan_output
-    description: Scan model output before user delivery.
+    description: Scan model output before user delivery using Prisma AIRS.
     inputs:
       content: ${llm_call.output}
       user_id: ${inputs.user_id}
-    outputs:
-      scan_result: ${output}
+    # The return value mirrors the structure from scan_input (dict with
+    # scanned_content, status, reason, result, etc.).
 
   - name: response
     type: output
     description: Final surface for delivering the assistant response.
     inputs:
+      # Return the scanned (and potentially redacted) model response.
       value: ${airs_output_scan.output.scanned_content}
