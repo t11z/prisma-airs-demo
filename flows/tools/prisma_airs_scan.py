@@ -1,38 +1,70 @@
-"""Scaffolding for Prisma AIRS scanning hooks within Prompt Flow.
-This module will later orchestrate input/output validation against Prisma AIRS.
-"""
+"""Prisma AIRS scanning hooks used by Prompt Flow nodes."""
 
-# TODO: Initialize Prisma AIRS SDK client once available.
-# TODO: Configure authentication, environment options, and any caching strategy.
+import os
+import logging
+
+import aisecurity
+from aisecurity import AISecurity, Scanner, AiProfile
+
+# Configure lightweight logging so flow operators can trace scan behavior.
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+# Initialize Prisma AIRS client using the configured API key.
+API_KEY = os.getenv("PRISMA_AIRS_API_KEY")
+ais_client = AISecurity(api_key=API_KEY) if API_KEY else None
+
+
+def _run_scan(direction, content, user_id=None):
+    """Shared helper to invoke Prisma AIRS scanning with safe fallbacks."""
+
+    # Base payload returned even when scanning is skipped or fails.
+    response = {
+        "direction": direction,
+        "original_content": content,
+        "scanned_content": content,
+        "status": "skipped" if not API_KEY else "pending",
+        "user_id": user_id,
+    }
+
+    if not API_KEY:
+        # Without credentials we cannot reach Prisma AIRS; keep content unchanged.
+        response["reason"] = "missing_api_key"
+        return response
+
+    try:
+        # AiProfile can hold policy configuration; default profile keeps this example minimal.
+        profile = AiProfile(name="default")
+
+        # Scanner.sync_scan performs the synchronous moderation/validation call.
+        scanner = Scanner(ai_security=ais_client, ai_profile=profile)
+        scan_result = scanner.sync_scan(
+            content=content,
+            metadata={"direction": direction, "user_id": user_id},
+        )
+
+        response.update(
+            {
+                "status": "scanned",
+                "scanned_content": scan_result.get("content", content) if isinstance(scan_result, dict) else content,
+                "result": scan_result,
+            }
+        )
+    except Exception as exc:  # pragma: no cover - defensive fallback for runtime errors
+        # Log the failure and return a structured error response instead of raising.
+        logger.warning("Prisma AIRS %s scan failed: %s", direction, exc)
+        response.update({"status": "error", "error": str(exc)})
+
+    return response
 
 
 def scan_input(content, user_id=None):
-    """Placeholder for scanning user-provided content before model invocation.
+    """Scan user-provided content before invoking the model."""
 
-    Args:
-        content: Raw input text from the user.
-        user_id: Optional identifier to route policies per user or tenant.
-
-    Returns:
-        The original or sanitized content once scanning is implemented.
-    """
-    # TODO: Invoke Prisma AIRS input scan with appropriate policies.
-    # TODO: Handle transient errors, retries, and structured responses.
-    # TODO: Raise or propagate meaningful exceptions for downstream handling.
-    pass
+    return _run_scan("input", content, user_id)
 
 
 def scan_output(content, user_id=None):
-    """Placeholder for scanning model responses before returning to the user.
+    """Scan model-generated content before returning it to the user."""
 
-    Args:
-        content: Model-generated text to be validated.
-        user_id: Optional identifier for policy enforcement per user or tenant.
-
-    Returns:
-        The original or sanitized content once scanning is implemented.
-    """
-    # TODO: Invoke Prisma AIRS output scan and map results into flow outputs.
-    # TODO: Implement logging, observability hooks, and error propagation.
-    # TODO: Ensure safe defaults when scanning fails or yields uncertain results.
-    pass
+    return _run_scan("output", content, user_id)
