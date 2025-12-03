@@ -1,3 +1,14 @@
-// Provider configuration placeholder.
-// TODO: Configure the Azure provider and any additional providers required for the lab.
+terraform {
+  required_version = ">= 1.5.0"
 
+  required_providers {
+    azurerm = {
+      source  = "hashicorp/azurerm"
+      version = ">= 3.107.0"
+    }
+  }
+}
+
+provider "azurerm" {
+  features {}
+}

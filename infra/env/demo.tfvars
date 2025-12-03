@@ -1,7 +1,5 @@
 # Example variable values for a demo environment.
-# TODO: Update these placeholders with actual values before running Terraform.
 
-# resource_group_name = ""
-# location            = ""
-# project_name        = ""
-# hub_name            = ""
+resource_group_name = "my-precreated-rg"
+location            = "westeurope"
+name_prefix         = "airsdemo01"
