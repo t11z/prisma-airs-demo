@@ -1,11 +1,44 @@
+# Deploys or updates Prompt Flow into Azure AI Foundry using existing infrastructure.
+# Requires infrastructure to be deployed already; generates infra-outputs.json from Terraform outputs.
+# Assumes AZURE_* secrets are configured for OIDC authentication.
 name: Deploy Prompt Flow
 
 on:
-  workflow_dispatch: {}
+  workflow_dispatch:
 
 jobs:
-  deploy:
+  deploy-flow:
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
     steps:
-      - name: TODO Configure Prompt Flow deployment steps
-        run: echo "Add flow packaging and deployment steps here."
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Azure login
+        uses: azure/login@v1
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Export Terraform outputs
+        working-directory: infra
+        run: |
+          terraform init
+          terraform output -json > ../infra-outputs.json
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Install Python dependencies
+        run: pip install -r flows/requirements.txt
+
+      - name: Deploy Prompt Flow
+        run: python scripts/deploy_flow.py --config infra-outputs.json
