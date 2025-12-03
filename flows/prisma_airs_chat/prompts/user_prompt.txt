@@ -1,0 +1,2 @@
+User prompt placeholder.
+This file will frame the user's message and connect it to Prisma AIRS scanning routines.

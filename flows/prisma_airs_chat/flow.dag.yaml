@@ -1,0 +1,25 @@
+# Prompt Flow DAG definition for Prisma AIRS + Azure AI Foundry chat.
+# TODO: Replace placeholders with actual nodes, connections, and parameters.
+
+name: prisma-airs-chat
+version: 0.0.1
+
+inputs:
+  user_input:
+    type: string
+    description: "User message to the assistant"
+
+outputs:
+  chat_response:
+    type: string
+    description: "Assistant response after Prisma AIRS scanning"
+
+nodes:
+  # - name: prepare_request
+  #   type: python
+  #   source: ./tools/prisma_airs_scan.py
+  #   inputs:
+  #     text: ${inputs.user_input}
+  #   outputs:
+  #     sanitized_text: ${outputs.cleaned_input}
+  # TODO: Add additional nodes for LLM calls and response scanning.
