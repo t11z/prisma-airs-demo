@@ -17,3 +17,9 @@ variable "name_prefix" {
   type        = string
   description = "Prefix for resource naming to ensure uniqueness across the environment."
 }
+
+// Name of an existing, policy-compliant Storage Account used by the deployment.
+variable "storage_account_name" {
+  type        = string
+  description = "Name of an existing, policy-compliant Storage Account in the target Resource Group."
+}

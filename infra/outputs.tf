@@ -27,5 +27,5 @@ output "ai_services_endpoint" {
 
 output "storage_account_name" {
   description = "Name of the Storage Account used by the lab."
-  value       = azurerm_storage_account.storage.name
+  value       = data.azurerm_storage_account.storage.name
 }
