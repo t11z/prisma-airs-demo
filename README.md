@@ -67,7 +67,7 @@ https://shell.azure.com (Bash)
 
 ### 2. Clone the repo
 ```
-git clone https://github.com/t11z/prisma-airs-demo
+git clone https://github.com/t11z/prisma-airs-demo.git
 cd prisma-airs-demo/infra
 ```
 
