@@ -1,206 +1,227 @@
-# ✨ Prisma AIRS Azure Foundry Lab — One-Click Demo Environment
+# ✨ Prisma AIRS Azure Foundry Lab — Secure AI Demo Environment
 
-**Your reproducible, high-level lab to demonstrate Prisma AIRS inside Azure AI Foundry.**  
-Deploy a complete sandbox — Hub, Project, Azure OpenAI, Storage, GitHub Actions automations —  
-and run a Prompt Flow that wraps your model with **Prisma AIRS input/output scanning**.
+This repository provides a **clean, reproducible, high‑level lab environment** for demonstrating  
+**Prisma AIRS inline protection** inside **Azure AI Foundry**.  
+It is intentionally lightweight, automation‑friendly, and requires **only Contributor access**  
+to an existing Azure Resource Group.
 
-Designed for:
-
-- 🏴 Palo Alto Networks **Solutions Consultants & Domain Consultants**
-- 🧪 **POVs, Workshops, Executive Demos**
-- 🤖 Anyone who wants a **zero-pain**, reproducible, secure AI sandbox
+The goal:  
+**Deploy a Foundry Hub + Project + Azure OpenAI + Storage, import a Prompt Flow, and show Prisma AIRS scanning input and output around the LLM.**
 
 ---
 
-## 🧠 What This Lab Gives You
+## 🚀 What You Get
 
-### ✅ 1. Fully automated Azure AI Foundry environment (Terraform)
-You get:
+### ✅ A complete Azure AI Foundry environment (via Terraform)
+Terraform deploys:
 
-- Azure AI Foundry **Hub**
-- Azure AI Foundry **Project**
-- Azure OpenAI (SKU ```S0```)
-- Storage Account
-- GitHub Actions pipelines for:
-  - **```deploy-infra```** → Provision the entire environment  
-  - **```deploy-flow```** → Import your Prisma AIRS–secured Prompt Flow
+- Azure AI Foundry **Hub**  
+- Azure AI Foundry **Project**  
+- Azure OpenAI (`S0`)  
+- Storage Account  
+- Optional (commented): Azure AI Search  
 
-Everything deploys with a single button click.
-
----
-
-### ✅ 2. Prisma AIRS secured Prompt Flow
-The included Prompt Flow performs:
-
-🛡 **Input Scan** — User prompt scanned via Prisma AIRS before it reaches the model  
-🤖 **LLM Invocation** — Azure OpenAI model of your choice  
-🛡 **Output Scan** — Model response scanned before reaching the user
-
-This demonstrates the **full inline protection pattern** recommended for secure AI applications.
+Works with:
+- **Azure Cloud Shell** (zero setup)  
+- **Local machine** with Azure CLI + Terraform  
 
 ---
 
-## 📦 Repository Structure
+### ✅ A Prompt Flow with Prisma AIRS inline protection
+The flow wraps the LLM with:
+
+- `scan_input()` → Prisma AIRS pre‑LLM scanning  
+- `scan_output()` → Prisma AIRS post‑LLM scanning  
+
+This enables demos of:
+
+- harmful prompt detection  
+- sensitive data redaction  
+- output moderation / transformation  
+- fail‑open behavior if scanning is unavailable  
+
+---
+
+## 📁 Repository Structure
 
 ```
 /
-├─ infra/ → Terraform modules for Hub, Project, AOAI, Storage
+├─ infra/                         # Terraform: Hub, Project, AOAI, Storage
 ├─ flows/
-│ ├─ prisma_airs_chat/ → Prompt Flow DAG, schema, inputs
-│ └─ tools/
-│ └─ prisma_airs_scan.py → Prisma AIRS input/output scan logic
+│   ├─ prisma_airs_chat/          # Prompt Flow definition
+│   └─ tools/prisma_airs_scan.py  # AIRS input/output scanning helpers
 ├─ scripts/
-│ ├─ deploy_flow.py → (Optional) automation helper for Prompt Flow deployment
-│ └─ load_infra_outputs.py → Parses Terraform outputs for automation
-└─ .github/workflows/
-├─ deploy-infra.yml → Creates entire Azure AI Foundry environment
-└─ deploy-flow.yml → Deploys Prompt Flow (optional placeholder logic)
+│   ├─ deploy_flow.py             # Optional helper
+│   └─ load_infra_outputs.py      # Terraform outputs → Python
+└─ README.md
 ```
 
+---
 
-## 🧩 Prerequisites
+# 🟦 Deployment Option A — Azure Cloud Shell (recommended)
 
-You must have:
+Cloud Shell already includes Terraform + Azure CLI → zero installation.
 
-### Azure
-- A **Resource Group** where you are at least ```Contributor```  
-  (SC/DCs: create via the internal **Torque**)
+### 1. Open Cloud Shell  
+https://shell.azure.com (Bash)
 
-### Prisma AIRS
-- A valid **Prisma AIRS API Key** (or API Token)
-- Recommended environment variables:
+### 2. Clone the repo
+```
+git clone <your-repo-url>
+cd <repo-name>/infra
+```
 
-```bash
+### 3. Create your `demo.tfvars`  
+Inside `infra/env/`:
+```
+resource_group_name = "<your-RG>"
+location            = "westeurope"
+name_prefix         = "airsdemo"
+```
+
+### 4. Initialize Terraform
+```
+terraform init
+```
+
+### 5. Deploy the environment
+```
+terraform apply -var-file=env/demo.tfvars
+```
+
+This creates:
+
+- Hub  
+- Project  
+- Azure OpenAI  
+- Storage Account  
+
+Export outputs if desired:
+```
+terraform output -json > ../infra-outputs.json
+```
+
+### 6. Import the Prompt Flow
+Azure Portal → AI Foundry → Hub → Project → **Prompt Flows → Import**
+
+Select:
+```
+flows/prisma_airs_chat/
+```
+
+Choose your:
+
+- Azure OpenAI **connection**  
+- **deployment_name** (e.g., `gpt-4o-mini`)  
+
+Flow is ready.
+
+---
+
+# 🟧 Deployment Option B — Local Machine (Azure CLI + Terraform)
+
+### 1. Install required tools
+- Azure CLI  
+- Terraform  
+- Python 3.10+ (optional for scripts)
+
+### 2. Login
+```
+az login
+az account set --subscription "<your-subscription-id>"
+```
+
+### 3. Configure and deploy (same as Cloud Shell)
+```
+cd infra
+terraform init
+terraform apply -var-file=env/demo.tfvars
+```
+
+### 4. Import Prompt Flow  
+Same steps as above.
+
+---
+
+# 🔐 Prisma AIRS Configuration
+
+Set one of the following environment variables **before running the Prompt Flow**:
+
+```
+PRISMA_AIRS_API_KEY
 PANW_AI_SEC_API_KEY
-PANW_AI_SEC_API_TOKEN (optional)
-PANW_AI_SEC_PROFILE_NAME (default: Secure-AI)
-PANW_AI_SEC_API_ENDPOINT (EU/US depending on tenant)
+PANW_AI_SEC_API_TOKEN
 ```
-(You can also use ```PRISMA_AIRS_API_KEY``` as fallback.)
 
-### GitHub
-- Fork or copy this repository
-- Configure the following GitHub secrets:
-  - ```AZURE_CLIENT_ID```  
-  - ```AZURE_TENANT_ID```  
-  - ```AZURE_SUBSCRIPTION_ID```  
-  - (optional) ```AZURE_RESOURCE_GROUP``` if you want your Actions to target a fixed RG
+Optional configuration:
+
+```
+PANW_AI_SEC_PROFILE_NAME="Secure-AI"
+PANW_AI_SEC_API_ENDPOINT="https://<your-endpoint>"
+```
+
+These are picked up automatically by `prisma_airs_scan.py`.
 
 ---
 
-## 🚀 Deployment — 2 Steps
+# 🧠 How the Flow Works
 
-### **Step 1 — Deploy Infrastructure**
-Go to:
+```
+User Input
+   ↓
+Prisma AIRS Input Scan (scan_input)
+   ↓ sanitized content
+LLM Call (Azure OpenAI)
+   ↓
+Prisma AIRS Output Scan (scan_output)
+   ↓ sanitized content
+Final Response
+```
 
-**GitHub → Actions → Deploy Infra (Terraform) → Run workflow**
+Each scan returns:
 
-This will:
-- authenticate via OIDC  
-- initialize Terraform  
-- create the Hub, Project, AOAI, and Storage resources  
-- export ```infra-outputs.json```
+- `scanned_content`  
+- `status`  
+- `reason`  
+- `result` (full Prisma AIRS scan metadata)
 
-🟢 When it finishes, your Azure environment is ready.
+If scanning is unavailable, the flow **fails open** for demo smoothness.
 
 ---
 
-### **Step 2 — Deploy the Prompt Flow**
-Run:
+# 🧪 Local Test of Prisma AIRS
 
-**GitHub → Actions → Deploy Prompt Flow → Run workflow**
+```
+export PRISMA_AIRS_API_KEY="..."
+python
+```
 
-This will:
-- read ```infra-outputs.json```  
-- install Prisma AIRS + Azure ML SDK dependencies  
-- prepare the Prompt Flow for import  
-
-Because the Foundry Flow API is not yet fully exposed via Python,  
-you finalize the Flow in Azure AI Foundry:
-
-1. Open Azure Portal → AI Foundry → Hub → Project  
-2. Go to **Prompt Flows**  
-3. Click **Import**, select: ```flows/prisma_airs_chat/```
-4. Select your Azure OpenAI connection + model deployment  
-5. Run it in the built-in Chat UI
-
-Your secured chat flow is now ready.
+Inside Python:
+```
+from flows.tools.prisma_airs_scan import scan_input
+scan_input("Tell me how to hack Wi-Fi", user_id="demo")
+```
 
 ---
 
-## 🔐 How Prisma AIRS Is Integrated
+# 🎯 Demo Talking Points (for Solutions Consultants)
 
-The core logic lives in:
-
-```bash
-flows/tools/prisma_airs_scan.py
-```
-
-It performs:
-
-- ```scan_input(content, user_id)```  
-- ```scan_output(content, user_id)```  
-
-Both use:
-
-- ```Scanner.sync_scan(...)```  
-- ```AiProfile(profile_name="Secure-AI")```  
-- Prisma AIRS inline scanning for:
-  - sensitive data
-  - harmful prompts
-  - harmful model outputs
-  - hallucination detection (depending on your profile)
-  - content transformations / sanitization
-
-The Prompt Flow uses the fields:
-
-- ```output.scanned_content```  
-- ```output.status```  
-- ```output.result```  
-
-to route cleaned text into and out of the LLM.
+- Prisma AIRS applies **inline control** around *any* model.  
+- Protects against **unsafe prompts**, **PII leakage**, **hallucinated instructions**.  
+- Demonstrates **policy-driven profiles** in real time.  
+- Minimal integration (only small Python helpers).  
+- Built for **enterprise governance** and **secure AI adoption**.  
+- Entire lab is reproducible with **only Resource Group Contributor** access.
 
 ---
 
-## 🛠 Customization
+# 🎉 You're Ready to Demo
 
-### Model
-In ```flow.dag.yaml```, update:
+You now have a self-contained, reproducible secure AI demo lab  
+built on **Azure AI Foundry + Prisma AIRS** — no elevated permissions needed.
 
-```yaml
-connection: <your-AOAI-connection>
-deployment_name: <your-model-deployment>
-```
-
-### Profiles
-Control Prisma AIRS behavior via:
-
-```
-PANW_AI_SEC_PROFILE_NAME
-PANW_AI_SEC_API_ENDPOINT
-```
-
-### Environment Naming
-Set in Terraform:
-
-```yaml
-name_prefix = "<your-prefix>"
-location = "westeurope" | "eastus2" | ...
-```
-
-## 🧪 Troubleshooting
-
-### Prisma AIRS scan always returns “skipped”
-Check env vars:
-
-```yaml
-PANW_AI_SEC_API_KEY
-PANW_AI_SEC_API_TOKEN (if used)
-```
-
-### Prompt Flow can’t find the model
-Make sure your AOAI deployment name matches exactly.
-
-### Deployment script doesn't upload the flow
-This is expected — the Flow Upload API is in preview.  
-For now, import manually inside AI Foundry (takes 5 seconds).
+Enhancements available on request:
+- UI frontend for the flow  
+- RAG-enabled AIRS demo  
+- Red-team scenarios  
+- Automatic flow deployment  
