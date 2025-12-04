@@ -1,233 +1,178 @@
-# ✨ Azure AI Foundry Lab with Prisma AIRS Integration
+# Prisma AIRS Demo – Azure AI Foundry Lab Infrastructure
 
-This repository provides a reproducible lab environment for experimenting with Azure AI Foundry and Prisma AIRS.  
-It is designed as a self-contained, infrastructure‑as‑code–driven project that deploys the necessary Azure resources and a Prompt Flow integrating Prisma AIRS input/output scanning.
-
-The repository operates entirely without CI/CD or service principals.  
-All deployments are performed either:
-
-- **locally**, using Azure CLI + Terraform, or  
-- **inside Azure Cloud Shell**, which already includes all required tools.
+This repository provides a reproducible environment for deploying a lightweight Azure AI Foundry setup used to test Prisma AIRS request/response scanning inside a Prompt Flow–based chat experience.  
+The infrastructure is intentionally minimal and works even in restricted corporate Azure environments.
 
 ---
 
-# 📘 Overview
+## ✨ What this project deploys (via Terraform)
 
-The lab environment includes:
+Inside an existing Azure Resource Group, Terraform will create:
 
-- An **Azure AI Foundry Hub**
-- An **Azure AI Foundry Project**
-- An **Azure AI Services** resource (successor to Azure OpenAI)
-- A **Storage Account** for Foundry metadata
-- A **Key Vault** used by the Foundry Hub
-- A **Prompt Flow** that applies Prisma AIRS inline scanning before and after model inference
+- **Azure AI Services** (OpenAI‑compatible endpoint)
+- **Azure Key Vault** (for AI Foundry)
+- **Azure AI Foundry Hub**
+- **Azure AI Foundry Project**
 
-This setup enables evaluation of AI application behavior under Prisma AIRS policies with minimal manual wiring.
-
----
-
-# 📂 Repository Structure
-
-```
-/
-├─ infra/                      Infrastructure-as-code for Azure resources (Terraform)
-│   ├─ main.tf
-│   ├─ outputs.tf
-│   ├─ variables.tf
-│   ├─ providers.tf
-│   └─ env/
-│       └─ demo.tfvars        Example variable file (created by the user)
-│
-├─ flows/
-│   ├─ prisma_airs_chat/      Prompt Flow definition
-│   └─ tools/
-│       └─ prisma_airs_scan.py  AIRS scanning helper functions
-│
-├─ scripts/
-│   ├─ deploy_flow.py         Optional helper for manual experimentation
-│   └─ load_infra_outputs.py  Parses Terraform outputs for scripts
-│
-└─ README.md
-```
+It **does not** create a Storage Account.  
+Instead, you provide **an existing, policy‑compliant Storage Account** from your tenant.
 
 ---
 
-# 🏗️ Infrastructure Architecture
+## 🚀 Prerequisites
 
-The infrastructure creates:
+### 1. An existing Azure Resource Group
+You must already have Contributor rights on a Resource Group where deployment will occur.
 
-1. **Azure AI Foundry Hub**  
-   A workspace‑level container for AI development components.
+### 2. An existing Storage Account (Bring Your Own Storage)
+Due to corporate policies, Terraform does **not** create a Storage Account.  
+Instead, you must create one manually.
 
-2. **Azure AI Foundry Project**  
-   A project environment mapped into the hub.
+See section **“How to create a compliant Storage Account in the Azure Portal”** below.
 
-3. **Azure AI Services Resource**  
-   Required for Prompt Flow model access.
+### 3. Azure authentication
+Use **either**:
 
-4. **Storage Account**  
-   Stores Foundry metadata and artifacts.
+- Local machine with Azure CLI  
+  ```
+  az login
+  ```
+- Azure Cloud Shell (recommended for locked‑down tenants)
 
-5. **Key Vault**  
-   Provides secrets and encryption keys referenced by the Foundry Hub.
+### 4. Required Terraform variables
 
-The Terraform configuration requires an existing Resource Group.  
-No elevated privileges (e.g., subscription-level Contributor) are necessary.
-
----
-
-# 🔧 Terraform Configuration
-
-Terraform requires the following variables:
+Create a file: `infra/env/demo.tfvars`
 
 ```
-subscription_id      = "<your-subscription-id>"
-resource_group_name  = "<existing-resource-group>"
-location             = "<region-of-resource-group>"
-name_prefix          = "<short-prefix-for-names>"
-```
-
-These are provided in a `.tfvars` file, e.g. `infra/env/demo.tfvars`.
-
-Retrieve subscription ID:
-
-```
-az account show --query id -o tsv
-```
-
----
-
-# 🌐 Deploying the Infrastructure
-
-## Option A: Azure Cloud Shell (recommended)
-
-Azure Cloud Shell includes Terraform and Azure CLI.
-
-### 1. Open Cloud Shell  
-https://shell.azure.com  
-Select **Bash**.
-
-### 2. Clone the repository
-
-```
-git clone <your-repo-url>
-cd <repo-name>/infra
-```
-
-### 3. Create `env/demo.tfvars`
-
-```
-subscription_id      = "<your-subscription-id>"
-resource_group_name  = "<your-existing-rg>"
-location             = "westeurope"
+resource_group_name  = "<your-rg>"
+location             = "<azure-region>"
 name_prefix          = "airsdemo"
-```
-
-### 4. Initialize Terraform
-
-```
-terraform init -upgrade
-```
-
-### 5. Deploy
-
-```
-terraform apply -var-file=env/demo.tfvars
+storage_account_name = "<existing-storage-account>"
 ```
 
 ---
 
-## Option B: Local Machine Deployment
+## 🧱 How to create a compliant Storage Account in the Azure Portal
 
-### 1. Install prerequisites
-- Azure CLI
-- Terraform
-- Python 3.10+
+In restricted enterprise tenants, Storage Accounts must meet strict security policies.  
+Follow these steps exactly to ensure Terraform can use the account without triggering policy violations.
 
-### 2. Authenticate
+---
+
+### ✔ Step‑by‑step instructions
+
+**Azure Portal → “Storage accounts” → “Create”**
+
+---
+
+### **1. Basics**
+| Field | Value |
+|-------|--------|
+| Resource Group | Same RG you deploy Terraform into |
+| Region | Same region as the RG |
+| Redundancy | LRS |
+| Performance | Standard |
+
+---
+
+### **2. Networking (important!)**
+
+#### Public network access  
+Set:
+```
+Public network access → Disabled
+```
+
+#### Firewall rules  
+Set:
+```
+Allow Azure services on the trusted services list → Enabled
+```
+
+#### Minimum TLS  
+```
+Minimum TLS version: 1.2
+```
+
+---
+
+### **3. Advanced**
+
+Your tenant likely enforces this automatically, but verify:
 
 ```
-az login
-az account set --subscription "<your-subscription-id>"
+Allow storage account key access → Disabled
 ```
 
-### 3. Deploy (same steps as Cloud Shell)
+This ensures:
+- No shared keys exist  
+- No SAS tokens can be generated  
+- Terraform is forced to stay on the control plane only
+
+This matches your corporate policies and avoids 403 errors.
+
+---
+
+### **4. Review and Create**
+
+Once created, note the Storage Account name and add it to `demo.tfvars`.
+
+---
+
+## 🔧 Deploying the Infrastructure
+
+From the repository root:
 
 ```
 cd infra
-terraform init -upgrade
+terraform init
 terraform apply -var-file=env/demo.tfvars
 ```
 
----
+Terraform will **not** attempt to access the Storage Account’s data plane.  
+It only reads metadata from the Azure Resource Manager control plane.
 
-# 🤖 Prompt Flow With Prisma AIRS
+If everything is correct, you will see output values including:
 
-Flow structure:
-
-```
-User Input
-   ↓
-Prisma AIRS Input Scan
-   ↓ sanitized content
-Model Invocation
-   ↓
-Prisma AIRS Output Scan
-   ↓ sanitized content
-Final Response
-```
-
-Each scan returns:
-
-- `scanned_content`
-- `status`
-- `reason`
-- `result`
+- Hub name  
+- Project name  
+- Storage account name  
 
 ---
 
-# 🔐 Configuring Prisma AIRS
+## 📦 What happens next?
 
-Set one of these environment variables:
+Once the infrastructure is deployed:
 
-```
-PRISMA_AIRS_API_KEY
-PANW_AI_SEC_API_KEY
-PANW_AI_SEC_API_TOKEN
-```
+- Open Azure AI Foundry  
+- Navigate into your Hub → Project  
+- Import and run the Prompt Flow under `flows/prisma_airs_chat`  
+- Provide your Prisma AIRS API key when running the flow
 
-Optional overrides:
-
-```
-PANW_AI_SEC_PROFILE_NAME
-PANW_AI_SEC_API_ENDPOINT
-```
+The system will then scan:
+- User input → before model call  
+- Model output → before returning a response  
 
 ---
 
-# 🧪 Local Testing
+## 🛠 Need to re‑deploy?
+
+Update your `.tfvars` file or run:
 
 ```
-export PRISMA_AIRS_API_KEY="..."
-python
+terraform apply
 ```
 
-```
-from flows.tools.prisma_airs_scan import scan_input
-scan_input("test message", user_id="local-demo")
-```
+State remains local unless you configure remote state.
 
 ---
 
-# 🧱 Design Principles
+## 📘 Notes
 
-- Minimal prerequisites  
-- No CI/CD dependency  
-- Predictable infrastructure  
-- Clear separation of concerns  
+- The Storage Account is “bring your own” to avoid enterprise policy violations.  
+- Terraform intentionally avoids creating or modifying the Storage Account.  
+- Azure AI Foundry accesses the Storage Account through its own managed identity.
 
 ---
 
-# 📜 License
-
-This project is provided for demonstration and exploration purposes.
+Enjoy exploring Prisma AIRS in a fully reproducible Azure AI environment!
