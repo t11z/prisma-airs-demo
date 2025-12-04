@@ -35,10 +35,19 @@ def main() -> None:
     project_name = outputs.ai_foundry_project_name
     location = outputs.location
 
-    # Subscription and resource group values are expected from Terraform outputs once available.
-    # Until then, fall back to environment variables that may be set via ``az login`` context or CI variables.
-    subscription_id = os.environ.get("AZURE_SUBSCRIPTION_ID") or "<subscription-id>"
-    resource_group = os.environ.get("AZURE_RESOURCE_GROUP") or "<resource-group-name>"
+    # For local or Cloud Shell usage: prefer environment variables, otherwise use the active ``az login`` context.
+    # Priority for subscription: ARM_SUBSCRIPTION_ID → AZURE_SUBSCRIPTION_ID → placeholder.
+    # Priority for resource group: ARM_RESOURCE_GROUP_NAME → AZURE_RESOURCE_GROUP → placeholder.
+    subscription_id = (
+        os.environ.get("ARM_SUBSCRIPTION_ID")
+        or os.environ.get("AZURE_SUBSCRIPTION_ID")
+        or "<subscription-id>"
+    )
+    resource_group = (
+        os.environ.get("ARM_RESOURCE_GROUP_NAME")
+        or os.environ.get("AZURE_RESOURCE_GROUP")
+        or "<resource-group-name>"
+    )
 
     # DefaultAzureCredential will use environment variables, managed identity, or a cached Azure CLI login.
     # Users can either rely on an existing ``az login`` session or configure environment-based credentials.
