@@ -67,8 +67,8 @@ https://shell.azure.com (Bash)
 
 ### 2. Clone the repo
 ```
-git clone <your-repo-url>
-cd <repo-name>/infra
+git clone https://github.com/t11z/prisma-airs-demo
+cd prisma-airs-demo/infra
 ```
 
 ### 3. Create your `demo.tfvars`  
