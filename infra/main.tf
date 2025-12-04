@@ -11,49 +11,10 @@ data "azurerm_resource_group" "target" {
   name = var.resource_group_name
 }
 
-resource "azurerm_ai_foundry_hub" "hub" {
-  name                = "${var.name_prefix}-hub"
-  location            = var.location
-  resource_group_name = data.azurerm_resource_group.target.name
+# Needed for Key Vault tenant id
+data "azurerm_client_config" "current" {}
 
-  identity {
-    type = "SystemAssigned"
-  }
-
-  # Ensure the Resource Group and the hub share the same region.
-  tags = local.tags
-}
-
-resource "azurerm_ai_foundry_project" "project" {
-  name                = "${var.name_prefix}-proj"
-  location            = var.location
-  resource_group_name = data.azurerm_resource_group.target.name
-  hub_id              = azurerm_ai_foundry_hub.hub.id
-
-  identity {
-    type = "SystemAssigned"
-  }
-
-  tags = local.tags
-}
-
-resource "azurerm_cognitive_account" "openai" {
-  name                = "${var.name_prefix}aoai"
-  location            = var.location
-  resource_group_name = data.azurerm_resource_group.target.name
-
-  kind     = "OpenAI"
-  sku_name = "S0"
-
-  network_acls {
-    default_action = "Allow"
-  }
-
-  public_network_access_enabled = true
-
-  tags = local.tags
-}
-
+# Storage Account for AI Foundry + general lab usage
 resource "azurerm_storage_account" "storage" {
   name                     = "${lower(replace(var.name_prefix, "-", ""))}sa"
   location                 = var.location
@@ -62,28 +23,62 @@ resource "azurerm_storage_account" "storage" {
   account_replication_type = "LRS"
   account_kind             = "StorageV2"
 
-  enable_https_traffic_only      = true
-  min_tls_version                = "TLS1_2"
-  public_network_access_enabled  = true
-  shared_access_key_enabled      = true
+  https_traffic_only_enabled      = true
+  min_tls_version                 = "TLS1_2"
+  public_network_access_enabled   = true
+  shared_access_key_enabled       = true
   allow_nested_items_to_be_public = false
 
   tags = local.tags
 }
 
-# Optional Azure AI Search service for retrieval scenarios.
-# TODO: Uncomment and adjust if search is required for Prompt Flow deployments.
-# resource "azurerm_search_service" "search" {
-#   name                = "${var.name_prefix}-search"
-#   location            = var.location
-#   resource_group_name = data.azurerm_resource_group.target.name
-#
-#   sku              = "basic"
-#   partition_count  = 1
-#   replica_count    = 1
-#   hosting_mode     = "Default"
-#
-#   public_network_access_enabled = true
-#
-#   tags = local.tags
-# }
+resource "azurerm_key_vault" "kv" {
+  name                = "${lower(replace(var.name_prefix, "-", ""))}kv"
+  location            = var.location
+  resource_group_name = data.azurerm_resource_group.target.name
+  tenant_id           = data.azurerm_client_config.current.tenant_id
+  sku_name            = "standard"
+
+  purge_protection_enabled = false
+
+  tags = local.tags
+}
+
+resource "azurerm_ai_services" "ai" {
+  name                = "${var.name_prefix}-aisvc"
+  location            = var.location
+  resource_group_name = data.azurerm_resource_group.target.name
+
+  sku_name = "S0"
+
+  custom_subdomain_name = lower(replace("${var.name_prefix}-aisvc", "_", "-"))
+
+  tags = local.tags
+}
+
+resource "azurerm_ai_foundry" "hub" {
+  name                = "${var.name_prefix}-hub"
+  location            = azurerm_ai_services.ai.location
+  resource_group_name = data.azurerm_resource_group.target.name
+
+  storage_account_id = azurerm_storage_account.storage.id
+  key_vault_id       = azurerm_key_vault.kv.id
+
+  identity {
+    type = "SystemAssigned"
+  }
+  
+  tags = local.tags
+}
+
+resource "azurerm_ai_foundry_project" "project" {
+  name               = "${var.name_prefix}-proj"
+  location           = azurerm_ai_foundry.hub.location
+  ai_services_hub_id = azurerm_ai_foundry.hub.id
+
+  identity {
+    type = "SystemAssigned"
+  }
+
+  tags = local.tags
+}
