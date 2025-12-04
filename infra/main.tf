@@ -14,27 +14,10 @@ data "azurerm_resource_group" "target" {
 # Needed for Key Vault tenant id
 data "azurerm_client_config" "current" {}
 
-# Storage Account for AI Foundry + general lab usage
-resource "azurerm_storage_account" "storage" {
-  name                     = "${lower(replace(var.name_prefix, "-", ""))}sa"
-  location                 = var.location
-  resource_group_name      = data.azurerm_resource_group.target.name
-  account_tier             = "Standard"
-  account_replication_type = "LRS"
-  account_kind             = "StorageV2"
-
-  https_traffic_only_enabled      = true
-  min_tls_version                 = "TLS1_2"
-  public_network_access_enabled   = false
-  shared_access_key_enabled       = false
-  allow_nested_items_to_be_public = false
-
-  network_rules {
-    default_action = "Deny"
-    bypass         = ["AzureServices"]
-  }
-
-  tags = local.tags
+# Storage Account for AI Foundry + general lab usage (existing resource)
+data "azurerm_storage_account" "storage" {
+  name                = var.storage_account_name
+  resource_group_name = data.azurerm_resource_group.target.name
 }
 
 resource "azurerm_key_vault" "kv" {
@@ -66,7 +49,7 @@ resource "azurerm_ai_foundry" "hub" {
   location            = azurerm_ai_services.ai.location
   resource_group_name = data.azurerm_resource_group.target.name
 
-  storage_account_id = azurerm_storage_account.storage.id
+  storage_account_id = data.azurerm_storage_account.storage.id
   key_vault_id       = azurerm_key_vault.kv.id
 
   identity {
